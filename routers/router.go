@@ -1,6 +1,7 @@
 package routers
 
 import (
+	"fiber_websocket/cruds"
 	"fiber_websocket/db"
 	"fiber_websocket/utils"
 	"fiber_websocket/ws"
@@ -77,9 +78,19 @@ func InitRouter(app *fiber.App) {
 	// app.Get("/ws/:id", room.ServeWs())
 	// app.Get("/ws/:id", room.ServeWs())
 
-	// api.Post("/signUp", func(c *fiber.Ctx) error {
-	// 	cruds.CreateUser()
-	// })
+	api.Post("/signUp", func(c *fiber.Ctx) error {
+		var payload db.SignUpUser
+		err := c.BodyParser(&payload)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).SendString(err.Error())
+		}
+		u, err := cruds.CreateUser(payload.Name, payload.Email, payload.Password)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).SendString(err.Error())
+		}
+		c.JSON(&u)
+		return nil
+	})
 }
 func middleware(c *fiber.Ctx) {
 	authorizationHeader := c.GetRespHeader("Authorization")
