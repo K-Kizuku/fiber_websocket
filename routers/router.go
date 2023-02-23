@@ -24,7 +24,8 @@ func InitRouter(app *fiber.App) {
 	app.Use(cors.New())
 	api := app.Group("/api/v1")
 	rooms := make(map[*ws.Room]bool)
-	// room := ws.NewRoom()
+	room := ws.NewRoom()
+	go room.Run()
 
 	api.Get("/", func(c *fiber.Ctx) error {
 		return c.SendString("Hello, World!!!!!!!!!!!!")
@@ -40,7 +41,7 @@ func InitRouter(app *fiber.App) {
 		return c.JSON(&temp)
 	})
 
-	app.Use("/ws", func(c *fiber.Ctx) error {
+	api.Use("/ws", func(c *fiber.Ctx) error {
 		// IsWebSocketUpgrade returns true if the client
 		// requested upgrade to the WebSocket protocol.
 		if websocket.IsWebSocketUpgrade(c) {
@@ -75,8 +76,16 @@ func InitRouter(app *fiber.App) {
 		// ...
 	})
 
+	api.Post("/ws", func(c *fiber.Ctx) error {
+		log.Println("OK")
+		room.ServeWs(c)
+		return nil
+	})
 	// app.Get("/ws/:id", room.ServeWs())
-	// app.Get("/ws/:id", room.ServeWs())
+	api.Get("/getid", func(c *fiber.Ctx) error {
+		u, _ := uuid.NewRandom()
+		return c.Send([]byte(u.String()))
+	})
 
 	api.Post("/signUp", func(c *fiber.Ctx) error {
 		var payload db.SignUpUser

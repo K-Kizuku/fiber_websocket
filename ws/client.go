@@ -136,13 +136,23 @@ func (c *Client) writePump() {
 	}
 }
 
-func (room *Room) ServeWs(ctx *fiber.Ctx, u uuid.UUID) error {
+func (room *Room) ServeWs(ctx *fiber.Ctx) error {
 	err := upgrader.Upgrade(ctx.Context(), func(conn *websocket.Conn) {
 		// u, _ := uuid.NewRandom()
-		client := &Client{room: room, conn: conn, send: make(chan []byte, 512), id: u.String()}
+		type Payload struct {
+			userId uuid.UUID `json:"id"`
+		}
+		var payload Payload
+		err := ctx.BodyParser(&payload)
+		if err != nil {
+			ctx.Status(fiber.StatusBadRequest).SendString(err.Error())
+		}
+		// payload := ctx.Body()
+
+		client := &Client{room: room, conn: conn, send: make(chan []byte, 512), id: payload.userId.String()}
 		client.room.register <- client
 		log.Println("tets")
-		log.Printf("uuid: %v", u.String())
+		log.Printf("uuid: %s", payload.userId.String())
 
 		go client.writePump()
 		client.readPump()
